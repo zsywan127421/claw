@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_mode"
+        android:title="模式"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/action_mode_plan"
+                android:title="Plan 模式" />
+            <item
+                android:id="@+id/action_mode_agent"
+                android:title="Agent 模式" />
+            <item
+                android:id="@+id/action_mode_yolo"
+                android:title="YOLO 模式" />
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/action_clear"
+        android:title="清屏"
+        app:showAsAction="never" />
+
+</menu>
