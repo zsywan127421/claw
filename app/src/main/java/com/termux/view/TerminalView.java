@@ -9,7 +9,9 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
+import com.termux.terminal.TerminalBuffer;
 import com.termux.terminal.TerminalEmulator;
+import com.termux.terminal.TerminalRow;
 import com.termux.terminal.TerminalSession;
 import com.termux.terminal.TerminalSessionClient;
 
@@ -23,6 +25,7 @@ public class TerminalView extends View implements TerminalSessionClient {
     private static final float DEFAULT_FONT_SIZE = 10f;
 
     private TerminalSession terminalSession;
+    private TerminalEmulator externalEmulator;
     private TerminalRenderer terminalRenderer;
 
     private GestureDetector gestureDetector;
@@ -45,6 +48,8 @@ public class TerminalView extends View implements TerminalSessionClient {
     private int scrollY = 0;
     private int maxScrollY = 0;
 
+    private OnKeyListener externalKeyListener;
+
     public interface TerminalViewClient {
         void onTerminalCursorStateChange(boolean state);
         void onCopyTextToClipboard(String text);
@@ -54,6 +59,11 @@ public class TerminalView extends View implements TerminalSessionClient {
 
     public interface OnScrollListener {
         void onScroll(int scrollY, int maxScrollY);
+    }
+
+    public interface OnKeyListener {
+        boolean onKeyDown(int keyCode, KeyEvent event);
+        boolean onKeyUp(int keyCode, KeyEvent event);
     }
 
     private TerminalViewClient terminalViewClient;
@@ -115,10 +125,27 @@ public class TerminalView extends View implements TerminalSessionClient {
         });
 
         renderExecutor = Executors.newSingleThreadExecutor();
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+    }
+
+    public void setExternalKeyListener(OnKeyListener listener) {
+        this.externalKeyListener = listener;
+    }
+
+    public void attachEmulator(TerminalEmulator emu) {
+        this.externalEmulator = emu;
+        if (emu != null) {
+            terminalColumns = emu.getTerminalWidth();
+            terminalRows = emu.getTerminalHeight();
+        }
+        updateTerminalSize();
+        postInvalidate();
     }
 
     public void attachToSession(TerminalSession session) {
         this.terminalSession = session;
+        this.externalEmulator = null;
         updateTerminalSize();
     }
 
@@ -128,6 +155,7 @@ public class TerminalView extends View implements TerminalSessionClient {
 
     public void setTerminalSession(TerminalSession session) {
         this.terminalSession = session;
+        this.externalEmulator = null;
         updateTerminalSize();
     }
 
@@ -150,18 +178,28 @@ public class TerminalView extends View implements TerminalSessionClient {
     }
 
     private void updateTerminalSize() {
-        float charWidth = terminalRenderer.getCharWidth();
-        float charHeight = terminalRenderer.getCharHeight();
+        if (externalEmulator != null) {
+            float charWidth = terminalRenderer.getCharWidth();
+            float charHeight = terminalRenderer.getCharHeight();
+            int newColumns = Math.max(1, (int) (viewWidth / charWidth));
+            int newRows = Math.max(1, (int) (viewHeight / charHeight));
 
-        int newColumns = Math.max(1, (int) (viewWidth / charWidth));
-        int newRows = Math.max(1, (int) (viewHeight / charHeight));
+            if (newColumns != terminalColumns || newRows != terminalRows) {
+                terminalColumns = newColumns;
+                terminalRows = newRows;
+                maxScrollY = Math.max(0, terminalRows - 1);
+                externalEmulator.resize(newColumns, newRows);
+            }
+        } else if (terminalSession != null) {
+            float charWidth = terminalRenderer.getCharWidth();
+            float charHeight = terminalRenderer.getCharHeight();
+            int newColumns = Math.max(1, (int) (viewWidth / charWidth));
+            int newRows = Math.max(1, (int) (viewHeight / charHeight));
 
-        if (newColumns != terminalColumns || newRows != terminalRows) {
-            terminalColumns = newColumns;
-            terminalRows = newRows;
-            maxScrollY = Math.max(0, terminalRows - 1);
-
-            if (terminalSession != null) {
+            if (newColumns != terminalColumns || newRows != terminalRows) {
+                terminalColumns = newColumns;
+                terminalRows = newRows;
+                maxScrollY = Math.max(0, terminalRows - 1);
                 terminalSession.updateSize(terminalRows, terminalColumns);
             }
         }
@@ -175,11 +213,15 @@ public class TerminalView extends View implements TerminalSessionClient {
         canvas.translate(translateX, translateY);
         canvas.scale(scaleFactor, scaleFactor);
 
-        if (terminalSession != null) {
-            TerminalEmulator emulator = terminalSession.getEmulator();
-            terminalRenderer.render(emulator, canvas, scrollY, terminalRows);
+        TerminalEmulator emulatorToRender = externalEmulator;
+        if (emulatorToRender == null && terminalSession != null) {
+            emulatorToRender = terminalSession.getEmulator();
+        }
+
+        if (emulatorToRender != null) {
+            terminalRenderer.render(emulatorToRender, canvas, scrollY, terminalRows);
         } else {
-            terminalRenderer.render(null, canvas, 0, terminalRows);
+            drawEmptyTerminal(canvas);
         }
 
         canvas.restore();
@@ -188,6 +230,10 @@ public class TerminalView extends View implements TerminalSessionClient {
             pendingRender = false;
             postInvalidate();
         }
+    }
+
+    private void drawEmptyTerminal(Canvas canvas) {
+        canvas.drawColor(0xFF0D1117);
     }
 
     @Override
@@ -199,6 +245,12 @@ public class TerminalView extends View implements TerminalSessionClient {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (externalKeyListener != null) {
+            if (externalKeyListener.onKeyDown(keyCode, event)) {
+                return true;
+            }
+        }
+
         if (terminalSession == null || !terminalSession.isRunning()) {
             return false;
         }
@@ -252,6 +304,16 @@ public class TerminalView extends View implements TerminalSessionClient {
         return super.onKeyDown(keyCode, event);
     }
 
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (externalKeyListener != null) {
+            if (externalKeyListener.onKeyUp(keyCode, event)) {
+                return true;
+            }
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
     private void toggleScale() {
         if (scaleFactor > 1.0f) {
             scaleFactor = 1.0f;
@@ -288,7 +350,6 @@ public class TerminalView extends View implements TerminalSessionClient {
     }
 
     public void setFontSize(float size) {
-        float oldSize = terminalRenderer.getTextSize();
         scaleFactor = size / DEFAULT_FONT_SIZE;
         terminalRenderer.setTextSize(size);
         updateTerminalSize();
