@@ -402,12 +402,12 @@ public class TerminalEmulator {
     }
 
     private void handleOSC(char c) {
-        if (c == '\x07' || (oscString.length() > 0 && c == '\x1B')) {
-            if (c == '\x1B' && oscString.length() > 0) {
+        if (c == (char)0x07 || (oscString.length() > 0 && c == (char)0x1B)) {
+            if (c == (char)0x1B && oscString.length() > 0) {
                 oscString.setLength(oscString.length() - 1);
             }
             state = STATE_NORMAL;
-        } else if (c != '\x1B') {
+        } else if (c != (char)0x1B) {
             oscString.append(c);
         }
     }

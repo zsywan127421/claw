@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Gradle wrapper script for UNIX
@@ -7,12 +7,14 @@
 # Determine the Java command to use
 if [ -n "$JAVA_HOME" ] ; then
     JAVACMD="$JAVA_HOME/bin/java"
+elif [ -x "/root/.local/share/mise/installs/java/17.0.2/bin/java" ]; then
+    JAVACMD="/root/.local/share/mise/installs/java/17.0.2/bin/java"
 else
     JAVACMD="java"
 fi
 
 # Check if Java is installed
-if ! command -v $JAVACMD &> /dev/null; then
+if [ ! -x "$JAVACMD" ]; then
     echo "Error: JAVA_HOME is not set and java is not in PATH"
     exit 1
 fi
@@ -25,8 +27,6 @@ WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
 if [ ! -f "$WRAPPER_JAR" ]; then
     echo "Downloading Gradle wrapper..."
     mkdir -p gradle/wrapper
-
-    # Download gradle-wrapper.jar from GitHub
     curl -fsSL \
         "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" \
         -o "$WRAPPER_JAR" || {

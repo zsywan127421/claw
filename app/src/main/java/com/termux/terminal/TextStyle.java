@@ -40,7 +40,7 @@ public final class TextStyle {
         return of(style, DEFAULT_TEXT_COLOR, DEFAULT_BACKGROUND_COLOR);
     }
 
-    public static TextStyle of(int foreColor) {
+    public static TextStyle withForegroundColor(int foreColor) {
         return of(0, foreColor, DEFAULT_BACKGROUND_COLOR);
     }
 

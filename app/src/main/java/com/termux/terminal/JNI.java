@@ -5,23 +5,17 @@ public final class JNI {
         System.loadLibrary("termux");
     }
 
-    public static native int createSubprocess(String cmd, String[] env, int rows, int cols, int[] masterFD, int[] pid);
+    public static native int createSubprocess(
+        String cmd, String cwd, String[] env, String[] args,
+        int[] processId, int rows, int cols, int pixelWidth, int pixelHeight);
 
-    public static native void setPtyWindowSize(int masterFD, int rows, int cols, int pixelWidth, int pixelHeight);
+    public static native void setPtyWindowSize(int fd, int rows, int cols, int pixelWidth, int pixelHeight);
 
-    public static native int waitFor(int pid);
+    public static native int waitFor(int processId);
 
-    public static native void close(int masterFD);
+    public static native void close(int fd);
 
-    public static native int read(int masterFD, ByteQueue queue, int timeout);
+    public static native int read(int fd, byte[] buffer, int length);
 
-    public static native void write(int masterFD, byte[] data, int length);
-
-    public static native void sendSignal(int pid, int signal);
-
-    public static native void sendToast(String msg);
-
-    public static native int setWindowSize(int rows, int cols);
-
-    public static native void onExec(String cmd, String[] env);
+    public static native int write(int fd, byte[] buffer, int length);
 }

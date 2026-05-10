@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/workspace/app/src/main/cpp/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/opt/android-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/workspace/app/.cxx/Debug/1n5gn25q/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/opt/android-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/workspace/app/.cxx/Debug/1n5gn25q/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "termux::@6890427a1f51a3e7e1df": {
+      "artifactName": "termux",
+      "abi": "x86_64",
+      "output": "/workspace/app/build/intermediates/cxx/Debug/1n5gn25q/obj/x86_64/libtermux.so",
+      "runtimeFiles": []
+    }
+  }
+}

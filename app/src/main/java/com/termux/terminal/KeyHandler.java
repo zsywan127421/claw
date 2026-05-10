@@ -72,15 +72,8 @@ public final class KeyHandler {
                     return new byte[]{0x1F};
                 case KeyEvent.KEYCODE_8:
                     return new byte[]{0x7F};
-                case KeyEvent.KEYCODE_BRACKET_LEFT:
-                    return new byte[]{0x1B};
                 case KeyEvent.KEYCODE_BACKSLASH:
                     return new byte[]{0x1C};
-                case KeyEvent.KEYCODE_BRACKET_RIGHT:
-                    return new byte[]{0x1D};
-                case KeyEvent.KEYCODE_CARET:
-                case KeyEvent.KEYCODE_6:
-                    return new byte[]{0x1E};
                 case KeyEvent.KEYCODE_MINUS:
                     return new byte[]{0x1F};
                 case KeyEvent.KEYCODE_SLASH:

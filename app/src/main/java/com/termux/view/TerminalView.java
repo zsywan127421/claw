@@ -45,9 +45,18 @@ public class TerminalView extends View implements TerminalSessionClient {
     private int scrollY = 0;
     private int maxScrollY = 0;
 
+    public interface TerminalViewClient {
+        void onTerminalCursorStateChange(boolean state);
+        void onCopyTextToClipboard(String text);
+        void onPasteTextFromClipboard();
+        void logDebug(String tag, String message);
+    }
+
     public interface OnScrollListener {
         void onScroll(int scrollY, int maxScrollY);
     }
+
+    private TerminalViewClient terminalViewClient;
 
     public TerminalView(Context context) {
         super(context);
@@ -113,6 +122,15 @@ public class TerminalView extends View implements TerminalSessionClient {
         updateTerminalSize();
     }
 
+    public void setTerminalViewClient(TerminalViewClient client) {
+        this.terminalViewClient = client;
+    }
+
+    public void setTerminalSession(TerminalSession session) {
+        this.terminalSession = session;
+        updateTerminalSize();
+    }
+
     public TerminalSession getSession() {
         return terminalSession;
     }
@@ -144,7 +162,7 @@ public class TerminalView extends View implements TerminalSessionClient {
             maxScrollY = Math.max(0, terminalRows - 1);
 
             if (terminalSession != null) {
-                terminalSession.resize(terminalColumns, terminalRows);
+                terminalSession.updateSize(terminalRows, terminalColumns);
             }
         }
     }
@@ -308,13 +326,6 @@ public class TerminalView extends View implements TerminalSessionClient {
 
     @Override
     public void onSessionDataAvailable(TerminalSession session) {
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-
-        while ((bytesRead = session.readFromQueue(buffer)) > 0) {
-            session.getEmulator().append(buffer, bytesRead);
-        }
-
         postInvalidate();
     }
 
